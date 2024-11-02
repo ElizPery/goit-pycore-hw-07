@@ -49,13 +49,6 @@ class Record:
         self.phones.append(str(Phone(phone)))
         return self.phones
     
-    # # Remove phone from the record by taking phone, if phone not exist return
-    # def remove_phone(self, phone: str):
-    #     if str(Phone(phone)) not in self.phones:
-    #         return 'Phone is not in phones'
-    #     self.phones = [el for el in self.phones if not el == str(Phone(phone))]
-    #     return self.phones
-    
     # Edit phone from the record by taking phone and new phone, if phone not exist return
     def edit_phone(self, phone: str, new_phone: str):
         # Check if phone exist
@@ -95,14 +88,7 @@ class AddressBook(UserDict):
             return self.data[name]
         return None
     
-    # # Delete record in dict by taking name, if name not exist return
-    # def delete(self, name: str):
-    #     if name in self.data:
-    #         del self.data[name]
-    #         return self.data
-    #     return 'No records with this name'
-    
-    # function that return list of users that have birthdays in upcoming week
+    # Function that return list of users that have birthdays in upcoming week
     def get_upcoming_birthdays(self):
         upcoming_birthdays = []
 
@@ -138,12 +124,7 @@ def input_error(func):
         try:
             return func(*args, **kwargs)
         except ValueError as e:
-            if str(e) == 'Invalid date format. Phone must contain 10 numbers!': return e
-            if str(e) == 'Phone is already exist.': return e
-            if str(e) == 'Please enter name, old phone and new phone!': return e
-            if str(e) == 'Please enter name and date of birthday!': return e
-            if str(e) == 'Invalid date format. Use DD.MM.YYYY.': return e
-            return "Give me name and phone please."
+            return e
         except IndexError:
             return "Enter user name!"
         except KeyError:
@@ -160,8 +141,11 @@ def parse_input(user_input: str):
 @input_error
 def add_contact(args: list[str], book: AddressBook) -> str:
     # Function add contact with data in args (name, phone) to the dict contacts or add phone if contact is already exist
-
-    name, phone, *_ = args
+    try:
+        name, phone, *_ = args
+    except ValueError:
+        return 'Give me name and phone please.'
+    
     record = book.find(name)
     message = "Contact updated."
 
