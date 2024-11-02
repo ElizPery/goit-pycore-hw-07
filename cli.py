@@ -72,10 +72,10 @@ class Record:
             raise KeyError
         return phone
     
-    # # Add birthday to the record by taking birthday (format 'DD.MM.YYYY')
-    # def add_birthday(self, date: str):
-    #     self.birthday = str(Birthday(date))
-    #     return self.birthday
+    # Add birthday to the record by taking birthday (format 'DD.MM.YYYY')
+    def add_birthday(self, date: str):
+        self.birthday = str(Birthday(date))
+        return self.birthday
 
     def __str__(self):
         return f'Contact name: {self.name}, phones: {'; '.join(p for p in self.phones)}, birthday: {self.birthday if self.birthday else "unknown"}'
@@ -102,33 +102,32 @@ class AddressBook(UserDict):
     #         return self.data
     #     return 'No records with this name'
     
-    # # function that return list of users that have birthdays in upcoming week
-    # def get_upcoming_birthdays(self):
-    #     upcoming_birthdays = []
+    # function that return list of users that have birthdays in upcoming week
+    def get_upcoming_birthdays(self):
+        upcoming_birthdays = []
 
-    #     for name, info in self.data.items():
-    #         if not info['birthday']: continue
-    #         print(info['birthday'])
-    #         birthday_date = datetime.strptime(info['birthday'], '%d.%m.%Y').date()
-    #         date_today = datetime.today().date()
-    #         upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day).date()
+        for info in self.data.values():
+            if not info.birthday: continue
+            birthday_date = datetime.strptime(info.birthday, '%d.%m.%Y').date()
+            date_today = datetime.today().date()
+            upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day).date()
 
-    #         # check if birthday already was this year, if yes, change date to the next year
-    #         if(upcoming_birthday < date_today):
-    #             upcoming_birthday = datetime(year=date_today.year + 1, month=birthday_date.month, day=birthday_date.day).date()
+            # check if birthday already was this year, if yes, change date to the next year
+            if(upcoming_birthday < date_today):
+                upcoming_birthday = datetime(year=date_today.year + 1, month=birthday_date.month, day=birthday_date.day).date()
 
-    #         # check if birthday in upcomming week
-    #         if(upcoming_birthday.toordinal() - date_today.toordinal() <= 7):
+            # check if birthday in upcomming week
+            if(upcoming_birthday.toordinal() - date_today.toordinal() <= 7):
 
-    #             # check if birthday on weekend, if yes, change congratulation date to Monday
-    #             if(upcoming_birthday.weekday() == 5):
-    #                 upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day + 2).date()
-    #             if(upcoming_birthday.weekday() == 6):
-    #                 upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day + 1).date()
+                # check if birthday on weekend, if yes, change congratulation date to Monday
+                if(upcoming_birthday.weekday() == 5):
+                    upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day + 2).date()
+                if(upcoming_birthday.weekday() == 6):
+                    upcoming_birthday = datetime(year=date_today.year, month=birthday_date.month, day=birthday_date.day + 1).date()
 
-    #             upcoming_birthdays.append({'name': name, 'congratulation_date': datetime.strftime(upcoming_birthday, '%d.%m.%Y')})
+                upcoming_birthdays.append({'name': str(info.name), 'congratulation_date': datetime.strftime(upcoming_birthday, '%d.%m.%Y')})
 
-    #     return upcoming_birthdays
+        return upcoming_birthdays
 
     def __str__(self):
         return f'{'\n'.join([str(contact) for contact in self.data.values()])}'
@@ -142,6 +141,8 @@ def input_error(func):
             if str(e) == 'Invalid date format. Phone must contain 10 numbers!': return e
             if str(e) == 'Phone is already exist.': return e
             if str(e) == 'Please enter name, old phone and new phone!': return e
+            if str(e) == 'Please enter name and date of birthday!': return e
+            if str(e) == 'Invalid date format. Use DD.MM.YYYY.': return e
             return "Give me name and phone please."
         except IndexError:
             return "Enter user name!"
@@ -205,27 +206,56 @@ def show_phone(args: str, book: AddressBook) -> str:
 
     phones = record.phones
     return f"Phones: {'; '.join(p for p in phones)}"
-    
-# Function takes dict of contacts and return it, if no contacts return 'No contacts found'
-def show_all(book: AddressBook) -> str:
-    all_contacts = []
 
+# Decorator to handle ValueError   
+@input_error
+def show_all(book: AddressBook) -> str:
+    # Function takes dict of contacts and return it, if no contacts return 'No contacts found'
     if len(book) == 0:
         return 'No contacts found'
     
     return book
 
-# @input_error
-# def add_birthday(args, book):
-#     pass
+# Decorator to handle ValueError
+@input_error
+def add_birthday(args: list, book: AddressBook):
+    # Function add birthday with data in args (name, date of birthday) to the dict contacts
+    try:
+        name, date, *_ = args
+    except ValueError:
+        return 'Please enter name and date of birthday!'
+    
+    record: Record = book.find(name)
 
-# @input_error
-# def show_birthday(args, book):
-#     pass
+    if record is None:
+        return "Contact is not in contacts!"
+    
+    record.add_birthday(date)
+    return 'Birthday added'
 
-# @input_error
-# def birthdays(args, book):
-#     pass
+
+# Decorator to handle ValueError
+@input_error
+def show_birthday(args: list, book: AddressBook):
+    # Function takes name of contact and return its birthday
+    name = args[0]    
+
+    record: Record = book.find(name)
+
+    if record is None:
+        return "Contact is not in contacts!"
+    return record.birthday
+
+# Function takes dict of contact and return upcoming birthdays
+def birthdays(book: AddressBook):
+
+    if len(book) == 0:
+        return 'No contacts found'
+    
+    birthdays = book.get_upcoming_birthdays()
+    if len(birthdays) == 0:
+        return 'No upcoming birthdays found'
+    return f'{'\n'.join([f'Congratulate {birthday['name']} on {birthday['congratulation_date']}' for birthday in birthdays])}'
 
 
 def main():
@@ -250,6 +280,12 @@ def main():
             print(show_phone(args, book))
         elif command == 'all':
             print(show_all(book))
+        elif command == 'add-birthday':
+            print(add_birthday(args, book))
+        elif command == 'show-birthday':
+            print(show_birthday(args, book))
+        elif command == 'birthdays':
+            print(birthdays(book))
         else:
             print('Invalid command')
 
