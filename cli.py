@@ -58,19 +58,19 @@ class Record:
     
     # Edit phone from the record by taking phone and new phone, if phone not exist return
     def edit_phone(self, phone: str, new_phone: str):
-        if str(Phone(phone)) in self.phones:
-            phone_index = self.phones.index(phone)
-            self.phones.remove(phone)
-            self.phones.insert(phone_index, new_phone)
-            return self.phones
-        else:
-            raise KeyError
+        # Check if phone exist
+        self.find_phone(phone)
 
-    # # Find phone from the record by taking phone, if phone not exist return
-    # def find_phone(self, phone: str):
-    #     if str(Phone(phone)) not in self.phones:
-    #         return 'Phone is not in phones'
-    #     return phone
+        phone_index = self.phones.index(phone)
+        self.phones.remove(phone)
+        self.phones.insert(phone_index, new_phone)
+        return self.phones
+
+    # Find phone from the record by taking phone, if phone not exist return
+    def find_phone(self, phone: str):
+        if str(Phone(phone)) not in self.phones:
+            raise KeyError
+        return phone
     
     # # Add birthday to the record by taking birthday (format 'DD.MM.YYYY')
     # def add_birthday(self, date: str):
@@ -179,7 +179,7 @@ def change_contact(args: list[str], book: AddressBook) -> str:
     except ValueError:
         return 'Please enter name, old phone and new phone!'
     
-    record = book.find(name)
+    record: Record = book.find(name)
     message = "Contact updated."
 
     if record is None:
@@ -189,15 +189,19 @@ def change_contact(args: list[str], book: AddressBook) -> str:
     record.edit_phone(phone, new_phone)
     return message
 
-# # Decorator to handle IndexError and KeyError
-# @input_error
-# def show_phone(args: str, contacts: dict) -> str:
-#     # Function takes name of contact and return its phone
+# Decorator to handle IndexError and KeyError
+@input_error
+def show_phone(args: str, book: AddressBook) -> str:
+    # Function takes name of contact and return its phone
+    name = args[0]
 
-#     name = args[0]
+    record: Record = book.find(name)
 
-#     phone = contacts[name]
-#     return phone
+    if record is None:
+        return "Contact is not in contacts!"
+
+    phones = record.phones
+    return f"Phones: {'; '.join(p for p in phones)}"
     
 # # Function takes dict of contacts and return it, if no contacts return 'No contacts found'
 # def show_all(contacts: dict) -> str:
@@ -241,8 +245,8 @@ def main():
             print(add_contact(args, book))
         elif command == 'change':
             print(change_contact(args, book))
-        # elif command == 'phone':
-        #     print(show_phone(args, contacts))
+        elif command == 'phone':
+            print(show_phone(args, book))
         # elif command == 'all':
         #     print(show_all(contacts))
         else:
