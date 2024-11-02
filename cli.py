@@ -77,8 +77,8 @@ class Record:
     #     self.birthday = str(Birthday(date))
     #     return self.birthday
 
-    # def __str__(self):
-    #     return f'Contact name: {self.name}, phones: {'; '.join(p for p in self.phones)}, birthday: {self.birthday if self.birthday else "unknown"}'
+    def __str__(self):
+        return f'Contact name: {self.name}, phones: {'; '.join(p for p in self.phones)}, birthday: {self.birthday if self.birthday else "unknown"}'
 
 # Class for address book
 class AddressBook(UserDict):
@@ -129,6 +129,9 @@ class AddressBook(UserDict):
     #             upcoming_birthdays.append({'name': name, 'congratulation_date': datetime.strftime(upcoming_birthday, '%d.%m.%Y')})
 
     #     return upcoming_birthdays
+
+    def __str__(self):
+        return f'{'\n'.join([str(contact) for contact in self.data.values()])}'
     
 # Decorator for handling errors of input
 def input_error(func):
@@ -203,16 +206,14 @@ def show_phone(args: str, book: AddressBook) -> str:
     phones = record.phones
     return f"Phones: {'; '.join(p for p in phones)}"
     
-# # Function takes dict of contacts and return it, if no contacts return 'No contacts found'
-# def show_all(contacts: dict) -> str:
-#     all_contacts = []
+# Function takes dict of contacts and return it, if no contacts return 'No contacts found'
+def show_all(book: AddressBook) -> str:
+    all_contacts = []
 
-#     if len(contacts) == 0:
-#         return 'No contacts found'
-#     for name, phone in contacts.items():
-#         all_contacts.append(f'Contact: {name} {phone}\n')
+    if len(book) == 0:
+        return 'No contacts found'
     
-#     return ''.join(all_contacts).strip()
+    return book
 
 # @input_error
 # def add_birthday(args, book):
@@ -247,32 +248,10 @@ def main():
             print(change_contact(args, book))
         elif command == 'phone':
             print(show_phone(args, book))
-        # elif command == 'all':
-        #     print(show_all(contacts))
+        elif command == 'all':
+            print(show_all(book))
         else:
             print('Invalid command')
 
 if __name__ == '__main__':
     main()
-    
-
-# book = AddressBook()
-# john_record = Record("Bill")
-# john_record.add_phone('0756489356')
-# john_record.add_phone('0756489476')
-# book.add_record(john_record)
-
-# alex_record = Record("Alex")
-# alex_record.add_phone('0756489355')
-# alex_record.add_phone('0756489466')
-# alex_record.add_birthday('10.10.2002')
-# book.add_record(alex_record)
-# print(alex_record)
-
-# alina_record = Record("alina")
-# alina_record.add_phone('0756489355')
-# alina_record.add_phone('0756489466')
-# alina_record.add_birthday('12.12.2002')
-# book.add_record(alina_record)
-# print(book.get_upcoming_birthdays())
-
