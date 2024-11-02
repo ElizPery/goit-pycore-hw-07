@@ -21,7 +21,7 @@ class Phone(Field):
         if len(phone) == 10 and all([el.isdigit() for el in phone]):
             super().__init__(phone)
         else:
-            raise ValueError('Invalid date format. Phone must contain 10 numbers')
+            raise ValueError('Invalid date format. Phone must contain 10 numbers!')
 
 # Class for birthday with validation (format 'DD.MM.YYYY')
 class Birthday(Field):
@@ -30,7 +30,7 @@ class Birthday(Field):
             value = datetime.strptime(date, '%d.%m.%Y').date()
             super().__init__(value)
         except ValueError:
-            raise ValueError('Invalid date format. Use DD.MM.YYYY')
+            raise ValueError('Invalid date format. Use DD.MM.YYYY.')
     
     def __str__(self):
         return datetime.strftime(self.value, '%d.%m.%Y')
@@ -45,7 +45,7 @@ class Record:
     # Add phone to the record by taking phone, if phone is already exist return
     def add_phone(self, phone: str):
         if str(Phone(phone)) in self.phones:
-            return 'Phone is already exist'
+            raise ValueError('Phone is already exist.')
         self.phones.append(str(Phone(phone)))
         return self.phones
     
@@ -56,15 +56,15 @@ class Record:
     #     self.phones = [el for el in self.phones if not el == str(Phone(phone))]
     #     return self.phones
     
-    # # Edit phone from the record by taking phone and new phone, if phone not exist return
-    # def edit_phone(self, phone: str, new_phone: str):
-    #     if str(Phone(phone)) in self.phones:
-    #         phone_index = self.phones.index(phone)
-    #         self.phones.remove(phone)
-    #         self.phones.insert(phone_index, new_phone)
-    #         return self.phones
-    #     else:
-    #         return 'Phone is not in phones'
+    # Edit phone from the record by taking phone and new phone, if phone not exist return
+    def edit_phone(self, phone: str, new_phone: str):
+        if str(Phone(phone)) in self.phones:
+            phone_index = self.phones.index(phone)
+            self.phones.remove(phone)
+            self.phones.insert(phone_index, new_phone)
+            return self.phones
+        else:
+            raise KeyError
 
     # # Find phone from the record by taking phone, if phone not exist return
     # def find_phone(self, phone: str):
@@ -85,15 +85,14 @@ class AddressBook(UserDict):
 
     # Add record to the dict by taking record
     def add_record(self, record: Record):
-        self.data[str(record.name)] = {'phones': record.phones, 'birthday': record.birthday}
+        self.data[str(record.name)] = record
 
-        return self.data
+        return self.data[str(record.name)]
 
     # Find record in dict by taking name
     def find(self, name: str):
         if name in self.data:
-            print(self.data[name])
-            return self.data
+            return self.data[name]
         return None
     
     # # Delete record in dict by taking name, if name not exist return
@@ -137,12 +136,14 @@ def input_error(func):
         try:
             return func(*args, **kwargs)
         except ValueError as e:
-            if str(e) == 'Invalid date format. Phone must contain 10 numbers': return e
+            if str(e) == 'Invalid date format. Phone must contain 10 numbers!': return e
+            if str(e) == 'Phone is already exist.': return e
+            if str(e) == 'Please enter name, old phone and new phone!': return e
             return "Give me name and phone please."
         except IndexError:
-            return "Enter user name"
+            return "Enter user name!"
         except KeyError:
-            return "Contact is not in contacts"
+            return "Contact is not in contacts."
     return inner
 
 # Function take user input (first command) and return parsed data 
@@ -154,7 +155,7 @@ def parse_input(user_input: str):
 # Decorator to handle ValueError
 @input_error
 def add_contact(args: list[str], book: AddressBook) -> str:
-    # Function add contact with data in args (name, phone) to the dict contacts
+    # Function add contact with data in args (name, phone) to the dict contacts or add phone if contact is already exist
 
     name, phone, *_ = args
     record = book.find(name)
@@ -169,18 +170,24 @@ def add_contact(args: list[str], book: AddressBook) -> str:
         record.add_phone(phone)
     return message
 
-# # Decorator to handle ValueError
-# @input_error
-# def change_contact(args: list[str], contacts: dict) -> str:
-#     # Function takes data about contact and update phone of contact by name
-
-#     name, phone = args
-
-#     if name in contacts:
-#         contacts[name] = phone
-#         return 'Contact is updated!'
+# Decorator to handle ValueError
+@input_error
+def change_contact(args: list[str], book: AddressBook) -> str:
+    # Function takes data about contact and update phone of contact by name
+    try:
+        name, phone, new_phone, *_ = args
+    except ValueError:
+        return 'Please enter name, old phone and new phone!'
     
-#     return 'Contact is not in contacts'
+    record = book.find(name)
+    message = "Contact updated."
+
+    if record is None:
+        message = "Contact is not in contacts!"
+        return message
+    
+    record.edit_phone(phone, new_phone)
+    return message
 
 # # Decorator to handle IndexError and KeyError
 # @input_error
@@ -232,8 +239,8 @@ def main():
             print('Hello, how can I help you?')
         elif command == 'add':
             print(add_contact(args, book))
-        # elif command == 'change':
-        #     print(change_contact(args, contacts))
+        elif command == 'change':
+            print(change_contact(args, book))
         # elif command == 'phone':
         #     print(show_phone(args, contacts))
         # elif command == 'all':
